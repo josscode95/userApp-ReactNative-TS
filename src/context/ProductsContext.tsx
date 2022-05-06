@@ -1,11 +1,6 @@
 import React, { createContext, useEffect, useState } from "react";
 import cafeAPI from "../api/cafeAPI";
 import { 
-  IAddProduct, 
-  IDeleteProduct, 
-  ILoadProductById, 
-  IUpdateProduct, 
-  IUploadImage, 
   Producto, 
   ProductsResponse 
 } from "../interfaces/appInterfaces";
@@ -13,11 +8,11 @@ import {
 type ProductsContextProps = {
   products:Producto[];
   loadProducts:()=>Promise<void>;
-  addProduct:(addProductProps:IAddProduct)=>Promise<void>;
-  updateProduct:(updateProductProps:IUpdateProduct)=>Promise<void>;
-  deleteProduct:(deleteProductProps:IDeleteProduct)=>Promise<void>;
-  loadProductById:(loadProductByIdProps:ILoadProductById)=>Promise<Producto>;
-  uploadImage:(uploadImageProps:IUploadImage)=>Promise<void>;
+  addProduct:(categoryId:string, productName:string)=>Promise<Producto>;
+  updateProduct:(categoryId:string, productName:string, productId:string)=>Promise<void>;
+  deleteProduct:(id:string)=>Promise<void>;
+  loadProductById:(id:string)=>Promise<Producto>;
+  uploadImage:(data:any, id:string)=>Promise<void>;
 }
 
 export const ProductsContext = createContext({} as ProductsContextProps)
@@ -36,17 +31,35 @@ export const ProductsProvider = ({children}:any) => {
     setProducts([...products, ...resp.data.productos])
   }
 
-  const addProduct = async(addProductProps:IAddProduct) => {}
-
-  const updateProduct = async(updateProductProps:IUpdateProduct) => {}
-
-  const deleteProduct = async(deleteProductProps:IDeleteProduct) => {}
-
-  const loadProductById = async(loadProductByIdProps:ILoadProductById) => {
-    throw new Error('Not implemented')
+  const addProduct = async(categoryId:string, productName:string):Promise<Producto> => {
+    const resp = await cafeAPI.post<Producto>('/productos', {
+      nombre: productName,
+      categoria: categoryId
+    });
+    setProducts([ ...products, resp.data ])
+    return resp.data;
   }
 
-  const uploadImage = async(uploadImageProps:IUploadImage) => {}
+  const updateProduct = async(categoryId:string, productName:string, productId:string) => {
+    const resp = await cafeAPI.put<Producto>(`/productos/${productId}`, {
+      nombre: productName,
+      categoria: categoryId
+    });
+    setProducts(products.map(prod => {
+      return (prod._id === productId)
+              ? resp.data
+              : prod
+    }))
+  }
+
+  const deleteProduct = async(id:string) => {}
+
+  const loadProductById = async(id:string):Promise<Producto> => {
+    const resp = await cafeAPI.get<Producto>(`/productos/${id}`);
+    return resp.data;
+  }
+
+  const uploadImage = async(data:any, id:string) => {}
 
   return(
     <ProductsContext.Provider value={{

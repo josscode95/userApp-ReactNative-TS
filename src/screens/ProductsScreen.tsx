@@ -1,11 +1,36 @@
-import React, { useContext } from 'react'
-import { FlatList, StyleSheet, Text, View } from 'react-native'
-import { TouchableOpacity } from 'react-native-gesture-handler'
+import { StackScreenProps } from '@react-navigation/stack'
+import React, { useContext, useEffect, useState } from 'react'
+import { FlatList, StyleSheet, Text, View, TouchableOpacity, RefreshControl } from 'react-native'
 import { ProductsContext } from '../context/ProductsContext'
+import { ProductsStackParams } from '../navigation/ProductsNavigator'
 
-export const ProductsScreen = () => {
+interface IProductsScreen extends StackScreenProps<ProductsStackParams, 'ProductsScreen'>{}
+
+export const ProductsScreen = ({navigation}:IProductsScreen) => {
+
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const { products, loadProducts } = useContext(ProductsContext)
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight:() => (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={{marginRight: 10}}
+          onPress={()=>navigation.navigate('ProductScreen', {})}
+        >
+          <Text>Agregar</Text>
+        </TouchableOpacity>
+      )
+    })
+  }, [])
+
+  const loadProductsFromBackend = async() => {
+    setIsRefreshing(true);
+    await loadProducts();
+    setIsRefreshing(false)
+  }
 
   return (
     <View style={{
@@ -18,6 +43,10 @@ export const ProductsScreen = () => {
         renderItem={({item}) => (
           <TouchableOpacity
             activeOpacity={0.8}
+            onPress={()=>navigation.navigate('ProductScreen', {
+              id: item._id,
+              name: item.nombre
+            })}
           >
             <Text style={styles.productName}>{ item.nombre }</Text>
           </TouchableOpacity>
@@ -25,6 +54,12 @@ export const ProductsScreen = () => {
         ItemSeparatorComponent={() => (
           <View style={styles.itemSeparator} />
         )}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing}
+            onRefresh={loadProductsFromBackend}
+          />
+        }
       />
     </View>
   )
